@@ -115,6 +115,11 @@ contract DBIPayment is Ownable, ReentrancyGuard {
         admins[_admin] = isAdmin;
     }
 
+    // This function allows an existing admin to update the payment amount
+    function updateMonthlyPayments(uint256 _amount) external onlyAdmin {
+        paymentAmount = _amount;
+    }
+
     // This function allows an admin to create a new cycle
     function createNewCycle() external onlyAdmin {
         cycleId.increment();

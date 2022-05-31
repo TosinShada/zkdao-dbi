@@ -65,6 +65,11 @@ contract DBIToken is ERC1155, Ownable {
         return _currentTokenId - 1;
     }
 
+    // This function checks if a recipient is blacklisted from DBI payment
+    function isMemberBlacklisted(address _member) external view returns(bool) {
+        return blacklisted[_member];
+    }
+
     // An override function to prevent token transfer
     function _beforeTokenTransfer(
         address operator,

@@ -81,6 +81,11 @@ contract DBIPayment is Ownable, ReentrancyGuard {
             "You have already withdrawn from this cycle"
         );
 
+        require(
+            _dbi.isMemberBlacklisted(msg.sender) == false,
+            "You are suspended from DBI payments"
+        );
+
         uint256 amount = getWithdrawableAmount();
         hasWithdrawn[cycleId.current()][msg.sender] = true;
 

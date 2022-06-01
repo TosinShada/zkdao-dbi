@@ -16,6 +16,8 @@ interface IDBIToken {
     function balanceOf(address account, uint256 id) external view returns (uint256);
 
     function getTokenCount() external view returns (uint256);
+    
+    function isMemberBlacklisted(address _member) external view returns(bool);
 
     // function balanceOfBatch(address[] calldata accounts, uint256[] calldata ids) external view returns (uint256[] memory);
 

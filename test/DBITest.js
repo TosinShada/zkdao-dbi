@@ -16,9 +16,13 @@ describe("DBIToken", function () {
         multisig = signers[1]
         recipient = signers[2]
 
+        console.log('owner', owner)
+
         const MockERC20Token = await ethers.getContractFactory("ERC20Mock")
         mockToken = await MockERC20Token.deploy('USD Coin', 'USDC', owner.address, 1000000000)
         await mockToken.deployed()
+
+        console.log(mockToken.address)
 
         const DBIPaymentToken = await hre.ethers.getContractFactory("DBIPayment")
         dbiPayment = await DBIPaymentToken.deploy(mockToken.address, dbitoken.address, 250)

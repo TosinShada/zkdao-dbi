@@ -61,7 +61,6 @@ contract DBIPayment is Ownable, ReentrancyGuard {
         _token = IERC20(token_);
         _dbi = IDBIToken(dbi_);
         paymentAmount = paymentAmount_;
-        cycleId.increment();
     }
 
     receive() external payable {}
@@ -78,7 +77,7 @@ contract DBIPayment is Ownable, ReentrancyGuard {
         
         require(
             hasWithdrawn[cycleId.current()][msg.sender] == false,
-            "You have already withdrawn from this cycle"
+            "You have already withdrawn this cycle"
         );
 
         require(
@@ -87,6 +86,12 @@ contract DBIPayment is Ownable, ReentrancyGuard {
         );
 
         uint256 amount = getWithdrawableAmount();
+
+        require(
+            amount <= _token.balanceOf(address(this)),
+            "There isn't enough funds to fulfill your request. Contact zkDAO governors."
+        );
+
         hasWithdrawn[cycleId.current()][msg.sender] = true;
 
         _token.safeTransfer(msg.sender, amount);
@@ -107,7 +112,15 @@ contract DBIPayment is Ownable, ReentrancyGuard {
             totalTokens += token;
         }
 
-        return totalTokens * paymentAmount;
+        require(
+            totalTokens >= 1,
+            "You do not have any DBI tokens"
+        );
+
+        uint256 admissibleTokens = totalTokens * cycleId.current();
+        uint256 claimedTokens = _dbi.getClaimedTokens(msg.sender);
+        uint256 unclaimedTokens = admissibleTokens - claimedTokens;
+        return unclaimedTokens;
     }
 
     // This function allows an existing admin to add new admins
@@ -123,6 +136,7 @@ contract DBIPayment is Ownable, ReentrancyGuard {
     // This function allows an admin to create a new cycle
     function createNewCycle() external onlyAdmin {
         cycleId.increment();
+        _dbi.updateCycle();
     }
     
     // This function returns the token balance of the DBI Payment contract

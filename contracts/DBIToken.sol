@@ -3,9 +3,11 @@
 pragma solidity ^0.7.0;
 
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Counters.sol";
 
-contract DBIToken is ERC1155, Ownable {
+contract DBIToken is ERC1155 {
+    using Counters for Counters.Counter;
+
     uint256 public constant MILESTONE_ONE = 1;
     uint256 public constant MILESTONE_TWO = 2;
     uint256 public constant MILESTONE_THREE = 3;
@@ -13,10 +15,11 @@ contract DBIToken is ERC1155, Ownable {
     uint256 public constant MILESTONE_FIVE = 5;
 
     uint256 private _currentTokenId = 6;
+    Counters.Counter public cycleId;
 
     address private constant ZKDAO_MULTISIG_WALLET = address(0x70997970C51812dc3A010C7d01b50e0d17dc79C8);
 
-    mapping(address => mapping(string => uint256)) public claimed;
+    mapping(address => uint256[]) public tokenTracker;
     mapping(address => bool) private admins;
     mapping(address => bool) private blacklisted;
 
@@ -70,6 +73,31 @@ contract DBIToken is ERC1155, Ownable {
         return blacklisted[_member];
     }
 
+    // This function allows an admin to update the cycle
+    function updateCycle() external onlyAdmin {
+        cycleId.increment();
+    }
+
+    // This function returns the tracker for the user's tokens
+    function getClaimedTokens(address _member) external view returns(uint256) {
+        uint256 tokenCount = tokenTracker[_member].length;
+        uint256 claimedTokens;
+
+        for (uint256 i = 0; i < tokenCount; i++) {
+            claimedTokens += tokenTracker[_member][i];
+        }
+        return claimedTokens;
+    }
+
+        // This function returns the tracker for the user's tokens
+    function updateTokenDetails(address _member) external onlyAdmin {
+        uint256 tokenCount = tokenTracker[_member].length;
+
+        for (uint256 i = 0; i < tokenCount; i++) {
+            tokenTracker[_member][i] = cycleId.current();
+        }
+    }
+
     // An override function to prevent token transfer
     function _beforeTokenTransfer(
         address operator,
@@ -89,6 +117,11 @@ contract DBIToken is ERC1155, Ownable {
                 to == ZKDAO_MULTISIG_WALLET, 
                 "Not allowed to transfer to another address other than the zkDAO multisig wallet"
             );
+        }
+
+        // Loop through all the tokens sent and assign the cycle id to each token
+        for (uint256 i = 0; i < amounts[0]; i++) {
+            tokenTracker[to].push(cycleId.current());
         }
 
         return super._beforeTokenTransfer(operator, from, to, ids, amounts, data);
